@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Product Review System</title>
+    <style>
+        .review-container {
+            width: 80%;
+            max-width: 600px;
+            background: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .review-tabs {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 20px;
+        }
+
+        .review-tab-button {
+            flex: 1;
+            padding: 10px;
+            background: #eee;
+            border: none;
+            cursor: pointer;
+            text-align: center;
+        }
+
+        .review-tab-button.active {
+            background: #ddd;
+        }
+
+        .review-tab-content {
+            display: none;
+        }
+
+        .review-tab-content.active {
+            display: block;
+        }
+
+        .review-form {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .review-form label {
+            margin-top: 10px;
+        }
+
+        .review-form input,
+        .review-form textarea,
+        .review-form select,
+        .review-form button {
+            padding: 10px;
+            margin-top: 5px;
+        }
+
+        .review-form button {
+            margin-top: 20px;
+            background: #333;
+            color: white;
+            border: none;
+            cursor: pointer;
+        }
+
+        .review-rating {
+            display: flex;
+            gap: 5px;
+            margin-top: 5px;
+        }
+
+        .review-rating svg {
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+        }
+
+        .review-rating svg.active {
+            fill: gold;
+        }
+    </style>
+</head>
+<body>
+    <div class="review-container">
+        <div class="review-tabs">
+            <button class="review-tab-button active" onclick="showTab('product-review')">This Product Review</button>
+            <button class="review-tab-button" onclick="showTab('store-review')">Store Review</button>
+        </div>
+
+        <div id="product-review" class="review-tab-content active">
+            <h2>Product Reviews</h2>
+            <form id="productReviewForm" class="review-form">
+                <label for="name">Name:</label>
+                <input type="text" id="name" name="name" required>
+                <label for="review">Review:</label>
+                <textarea id="review" name="review" required></textarea>
+                <label for="rating">Rating:</label>
+                <div id="rating" class="review-rating">
+                    <svg class="star" data-value="1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2" />
+                    </svg>
+                    <svg class="star" data-value="2" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2" />
+                    </svg>
+                    <svg class="star" data-value="3" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2" />
+                    </svg>
+                    <svg class="star" data-value="4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2" />
+                    </svg>
+                    <svg class="star" data-value="5" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+                        <polygon points="12 2 15 8 22 9 17 14 18 21 12 18 6 21 7 14 2 9 9 8 12 2" />
+                    </svg>
+                </div>
+                <input type="hidden" id="selectedRating" name="rating" value="5">
+                <label for="photo">Photo:</label>
+                <input type="file" id="photo" name="photo" accept="image/*">
+                <input type="hidden" id="productId" name="productId" value="12345"> <!-- Example Product ID -->
+                <button type="submit">Submit Review</button>
+            </form>
+            <div id="productReviews"></div>
+        </div>
+
+        <div id="store-review" class="review-tab-content">
+            <h2>Store Reviews</h2>
+            <div id="storeReviews"></div>
+        </div>
+    </div>
+
+    <script>
+        function showTab(tabId) {
+            document.querySelectorAll('.review-tab-content').forEach(tab => tab.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+
+            document.querySelectorAll('.review-tab-button').forEach(button => button.classList.remove('active'));
+            document.querySelector(`[onclick="showTab('${tabId}')"]`).classList.add('active');
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const stars = document.querySelectorAll('.star');
+            stars.forEach(star => {
+                star.addEventListener('click', () => {
+                    const rating = star.getAttribute('data-value');
+                    document.getElementById('selectedRating').value = rating;
+                    stars.forEach(s => s.classList.remove('active'));
+                    for (let i = 0; i < rating; i++) {
+                        stars[i].classList.add('active');
+                    }
+                });
+            });
+
+            const form = document.getElementById('productReviewForm');
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+
+                const formData = new FormData(event.target);
+                const fileInput = document.getElementById('photo');
+                const file = fileInput.files[0];
+
+                if (file) {
+                    const reader = new FileReader();
+                    reader.onloadend = function() {
+                        formData.append('photo', reader.result);
+                        submitReview(formData);
+                    }
+                    reader.readAsDataURL(file);
+                } else {
+                    submitReview(formData);
+                }
+            });
+
+            function submitReview(formData) {
+                fetch('YOUR_GITHUB_PAGES_URL', { // Replace with your GitHub Pages URL
+                    method: 'POST',
+                    body: formData
+                })
+                .then(response => response.json())
+                .then(data => {
+                    alert('Review submitted successfully!');
+                    loadReviews();
+                })
+                .catch(error => console.error('Error submitting review:', error));
+            }
+
+            function loadReviews() {
+                // Implement the logic to fetch and display reviews from Google Sheets
+            }
+
+            loadReviews();
+        });
+    </script>
+</body>
+</html>
